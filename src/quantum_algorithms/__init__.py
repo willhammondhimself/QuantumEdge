@@ -9,4 +9,17 @@ This module contains implementations of:
 
 from typing import List
 
-__all__: List[str] = []
+from .quantum_gates import QuantumGates, create_controlled_gate
+from .quantum_circuit import QuantumCircuit, Operation
+from .vqe import QuantumVQE, ParameterizedCircuit, VQEResult, JAX_AVAILABLE
+
+__all__: List[str] = [
+    "QuantumGates",
+    "create_controlled_gate", 
+    "QuantumCircuit",
+    "Operation",
+    "QuantumVQE",
+    "ParameterizedCircuit", 
+    "VQEResult",
+    "JAX_AVAILABLE"
+]
