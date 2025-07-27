@@ -12,6 +12,7 @@ from typing import List
 from .quantum_gates import QuantumGates, create_controlled_gate
 from .quantum_circuit import QuantumCircuit, Operation
 from .vqe import QuantumVQE, ParameterizedCircuit, VQEResult, JAX_AVAILABLE
+from .qaoa import PortfolioQAOA, QAOACircuit, QAOAResult
 
 __all__: List[str] = [
     "QuantumGates",
@@ -21,5 +22,8 @@ __all__: List[str] = [
     "QuantumVQE",
     "ParameterizedCircuit", 
     "VQEResult",
-    "JAX_AVAILABLE"
+    "JAX_AVAILABLE",
+    "PortfolioQAOA",
+    "QAOACircuit",
+    "QAOAResult"
 ]
