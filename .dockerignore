@@ -1,0 +1,97 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.mypy_cache/
+.hypothesis/
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+data/market_data/
+data/historical/
+logs/
+*.h5
+*.pkl
+*.pth
+models/
+checkpoints/
+benchmarks/results/
+
+# Documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Testing
+htmlcov/
+.coverage
+.coverage.*
+pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Node
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Local config
+.env
+config/secrets.yaml
+config/api_keys.json

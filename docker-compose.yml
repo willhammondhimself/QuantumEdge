@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  quantumedge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quantumedge-app
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+      - REDIS_URL=redis://redis:6379/0
+      - INFLUXDB_URL=http://influxdb:8086
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./configs:/app/configs
+    depends_on:
+      - redis
+      - influxdb
+      - kafka
+    networks:
+      - quantumedge-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: quantumedge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - quantumedge-network
+
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: quantumedge-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=quantumedge123
+      - DOCKER_INFLUXDB_INIT_ORG=quantumedge
+      - DOCKER_INFLUXDB_INIT_BUCKET=metrics
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=quantumedge-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    networks:
+      - quantumedge-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: quantumedge-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - quantumedge-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: quantumedge-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - quantumedge-network
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: quantumedge-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=quantumedge123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    networks:
+      - quantumedge-network
+
+  # Development database for storing configuration and results
+  postgres:
+    image: postgres:16-alpine
+    container_name: quantumedge-postgres
+    environment:
+      - POSTGRES_USER=quantumedge
+      - POSTGRES_PASSWORD=quantumedge123
+      - POSTGRES_DB=quantumedge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - quantumedge-network
+
+volumes:
+  redis-data:
+  influxdb-data:
+  influxdb-config:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  grafana-data:
+  postgres-data:
+
+networks:
+  quantumedge-network:
+    driver: bridge
