@@ -46,6 +46,7 @@ websockets==12.0
 fastapi==0.108.0
 uvicorn[standard]==0.25.0
 pydantic==2.5.3
+pydantic-settings==2.1.0
 httpx==0.26.0
 
 # Database & Time Series
