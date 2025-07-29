@@ -9,8 +9,9 @@ import asyncio
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, date
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,6 +46,43 @@ logging.basicConfig(
 
 logger = get_logger(__name__)
 
+# Initialize WebSocket components
+data_pipeline = None
+portfolio_monitor = None
+market_data_source = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application startup and shutdown."""
+    global data_pipeline, portfolio_monitor, market_data_source
+    
+    # Startup
+    logger.info("Starting QuantumEdge application...")
+    
+    # Initialize WebSocket components
+    data_pipeline = DataPipeline(connection_manager)
+    portfolio_monitor = PortfolioMonitor(data_pipeline)
+    
+    # Initialize market data source
+    market_data_source = create_market_data_source(use_simulation=settings.environment == "development")
+    data_pipeline.register_market_data_source("primary", market_data_source.get_market_updates)
+    
+    # Initialize WebSocket background tasks
+    await connection_manager._setup_background_tasks()
+    
+    # Start data pipeline
+    await data_pipeline.start()
+    logger.info("Real-time data pipeline started")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down QuantumEdge application...")
+    if data_pipeline:
+        await data_pipeline.stop()
+    await connection_manager.cleanup()
+    logger.info("Real-time services shut down")
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
@@ -52,6 +90,7 @@ app = FastAPI(
     description=settings.app_description,
     docs_url=settings.docs_url,
     redoc_url=settings.redoc_url,
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -62,32 +101,6 @@ app.add_middleware(
     allow_methods=settings.allowed_methods,
     allow_headers=settings.allowed_headers,
 )
-
-# Initialize WebSocket components
-data_pipeline = DataPipeline(connection_manager)
-portfolio_monitor = PortfolioMonitor(data_pipeline)
-
-# Initialize market data source
-market_data_source = create_market_data_source(use_simulation=settings.environment == "development")
-data_pipeline.register_market_data_source("primary", market_data_source.get_market_updates)
-
-# Start data pipeline on app startup
-@app.on_event("startup")
-async def startup_event():
-    """Initialize real-time data pipeline on startup."""
-    # Initialize WebSocket background tasks
-    await connection_manager._setup_background_tasks()
-    
-    # Start data pipeline
-    await data_pipeline.start()
-    logger.info("Real-time data pipeline started")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on app shutdown."""
-    await data_pipeline.stop()
-    await connection_manager.cleanup()
-    logger.info("Real-time services shut down")
 
 
 # Exception handlers
