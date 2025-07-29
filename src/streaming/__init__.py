@@ -1,13 +1,35 @@
 """
-Real-time data streaming and processing.
+Real-time streaming module for QuantumEdge.
 
-This module handles:
-- Market data ingestion via Kafka
-- State management with Redis
-- WebSocket connections
-- Real-time portfolio updates
+This module provides WebSocket-based real-time data streaming for
+portfolio monitoring, market data, and risk metrics.
 """
 
-from typing import List
+from .websocket import WebSocketConnectionManager, WebSocketMessage, MessageType, connection_manager
+from .data_pipeline import DataPipeline, MarketDataUpdate, PortfolioUpdate, RiskUpdate
+from .portfolio_monitor import PortfolioMonitor, Portfolio, AlertRule
+from .market_data_source import MarketDataSource, SimulatedMarketDataSource, create_market_data_source
 
-__all__: List[str] = []
+__all__ = [
+    # WebSocket components
+    "WebSocketConnectionManager",
+    "WebSocketMessage",
+    "MessageType",
+    "connection_manager",
+    
+    # Data pipeline
+    "DataPipeline",
+    "MarketDataUpdate", 
+    "PortfolioUpdate",
+    "RiskUpdate",
+    
+    # Portfolio monitoring
+    "PortfolioMonitor",
+    "Portfolio",
+    "AlertRule",
+    
+    # Market data sources
+    "MarketDataSource",
+    "SimulatedMarketDataSource",
+    "create_market_data_source"
+]

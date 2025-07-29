@@ -4,7 +4,7 @@ jaxlib==0.4.23
 qiskit==0.45.1
 qiskit-aer==0.13.1
 pennylane==0.33.1
-tensornetwork==0.5.1
+tensornetwork==0.4.6
 
 # Mathematical Optimization
 cvxpy==1.4.1

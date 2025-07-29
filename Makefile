@@ -1,22 +1,13 @@
-.PHONY: help install install-dev test lint format type-check clean docker-build docker-up docker-down
+# QuantumEdge Development Makefile
+# Professional development workflow automation
+
+.PHONY: help install install-dev clean test test-unit test-integration lint format type-check benchmark security docs dev-setup all-checks deploy-local
 
 # Default target
-help:
-	@echo "QuantumEdge Development Commands"
-	@echo "================================"
-	@echo "install       - Install production dependencies"
-	@echo "install-dev   - Install development dependencies"
-	@echo "test          - Run all tests"
-	@echo "test-unit     - Run unit tests only"
-	@echo "test-int      - Run integration tests only"
-	@echo "lint          - Run linting checks"
-	@echo "format        - Format code with black and isort"
-	@echo "type-check    - Run mypy type checking"
-	@echo "clean         - Clean build artifacts"
-	@echo "docker-build  - Build Docker images"
-	@echo "docker-up     - Start Docker services"
-	@echo "docker-down   - Stop Docker services"
-	@echo "dev-setup     - Complete development setup"
+help: ## Show this help message
+	@echo "QuantumEdge Development Commands:"
+	@echo "================================="
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # Python environment
 install:

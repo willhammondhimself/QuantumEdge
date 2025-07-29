@@ -1,0 +1,24 @@
+# Title: Summarize changes in 50 characters or less
+#
+# Explain what and why (not how) in up to 72 characters per line
+#
+# Consider including:
+# - What problem does this solve?
+# - What is the business/technical impact?
+# - Any breaking changes or migration notes
+# - Performance implications
+# - Security considerations
+#
+# Examples:
+# feat: add VQE-based eigenportfolio optimization algorithm
+# fix: resolve numerical instability in QAOA parameter optimization  
+# perf: optimize covariance matrix computation with CUDA kernels
+# docs: add comprehensive portfolio construction tutorial
+# test: add stress testing scenarios for crisis periods
+# refactor: simplify risk model interface for better maintainability
+#
+# Use conventional commit format:
+# <type>(<scope>): <description>
+#
+# Types: feat, fix, docs, style, refactor, test, chore, perf
+# Scopes: quantum, optimization, risk, api, docs, tests, ci

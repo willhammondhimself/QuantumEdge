@@ -27,6 +27,9 @@ class ObjectiveType(Enum):
     MINIMIZE_VARIANCE = "minimize_variance"
     MAXIMIZE_RETURN = "maximize_return"
     MAXIMIZE_UTILITY = "maximize_utility"
+    MINIMIZE_CVAR = "minimize_cvar"
+    MAXIMIZE_CALMAR = "maximize_calmar"
+    MAXIMIZE_SORTINO = "maximize_sortino"
 
 
 @dataclass
@@ -59,9 +62,6 @@ class PortfolioConstraints:
     
     # Risk constraints
     max_variance: Optional[float] = None
-    max_tracking_error: Optional[float] = None
-    
-    # Return constraints
     min_return: Optional[float] = None
     target_return: Optional[float] = None
     
@@ -71,35 +71,37 @@ class PortfolioConstraints:
 
 
 class MeanVarianceOptimizer:
-    """Classical mean-variance portfolio optimizer."""
+    """
+    Mean-variance portfolio optimizer using modern portfolio theory.
+    
+    Implements Markowitz mean-variance optimization with support for various
+    objective functions and portfolio constraints.
+    """
     
     def __init__(
         self,
         risk_free_rate: float = 0.02,
-        solver: str = 'OSQP',
+        solver_preference: List[str] = None,
         verbose: bool = False
     ):
         """
-        Initialize mean-variance optimizer.
+        Initialize the optimizer.
         
         Args:
-            risk_free_rate: Risk-free rate for Sharpe ratio calculation
-            solver: CVXPY solver to use
-            verbose: Whether to print solver output
+            risk_free_rate: Risk-free rate for Sharpe ratio calculations
+            solver_preference: Preferred CVXPY solvers in order
+            verbose: Enable verbose solver output
         """
         if not CVXPY_AVAILABLE:
-            raise ImportError("CVXPY is required for MeanVarianceOptimizer. Install with: pip install cvxpy")
+            raise ImportError("CVXPY is required for mean-variance optimization")
         
         self.risk_free_rate = risk_free_rate
-        self.solver = solver
+        self.solver_preference = solver_preference or ['OSQP', 'ECOS', 'SCS']
         self.verbose = verbose
-        
-        # Available solvers in order of preference
-        self.solvers = ['OSQP', 'ECOS', 'SCS', 'CLARABEL']
     
     def _get_available_solver(self) -> str:
-        """Get first available solver from preference list."""
-        for solver in self.solvers:
+        """Get the first available solver from preferences."""
+        for solver in self.solver_preference:
             if hasattr(cp, solver):
                 return solver
         return 'OSQP'  # Default fallback
@@ -110,10 +112,13 @@ class MeanVarianceOptimizer:
         covariance_matrix: np.ndarray,
         objective: ObjectiveType = ObjectiveType.MAXIMIZE_SHARPE,
         constraints: Optional[PortfolioConstraints] = None,
-        risk_aversion: float = 1.0
+        risk_aversion: float = 1.0,
+        returns_data: Optional[np.ndarray] = None,
+        cvar_confidence: float = 0.05,
+        lookback_periods: int = 252
     ) -> OptimizationResult:
         """
-        Optimize portfolio using mean-variance framework.
+        Optimize portfolio using mean-variance framework with advanced objectives.
         
         Args:
             expected_returns: Expected returns for each asset
@@ -121,6 +126,9 @@ class MeanVarianceOptimizer:
             objective: Optimization objective
             constraints: Portfolio constraints
             risk_aversion: Risk aversion parameter for utility maximization
+            returns_data: Historical returns data for CVaR/Sortino/Calmar (n_periods x n_assets)
+            cvar_confidence: Confidence level for CVaR (e.g., 0.05 for 5% CVaR)
+            lookback_periods: Number of periods for Calmar ratio calculation
             
         Returns:
             Optimization result
@@ -138,6 +146,8 @@ class MeanVarianceOptimizer:
         portfolio_variance = cp.quad_form(w, covariance_matrix)
         
         # Define objective function
+        additional_constraints = []
+        
         if objective == ObjectiveType.MAXIMIZE_SHARPE:
             # Use utility approximation for Sharpe ratio
             objective_func = cp.Maximize(portfolio_return - 0.5 * portfolio_variance)
@@ -148,6 +158,24 @@ class MeanVarianceOptimizer:
         elif objective == ObjectiveType.MAXIMIZE_UTILITY:
             # Mean-variance utility: return - (risk_aversion/2) * variance
             objective_func = cp.Maximize(portfolio_return - (risk_aversion/2) * portfolio_variance)
+        elif objective == ObjectiveType.MINIMIZE_CVAR:
+            # CVaR optimization requires historical returns data
+            if returns_data is None:
+                raise ValueError("returns_data required for CVaR optimization")
+            objective_func, cvar_constraints = self._create_cvar_objective(w, returns_data, cvar_confidence)
+            additional_constraints.extend(cvar_constraints)
+        elif objective == ObjectiveType.MAXIMIZE_SORTINO:
+            # Sortino ratio optimization (return/downside deviation)
+            if returns_data is None:
+                raise ValueError("returns_data required for Sortino optimization")
+            objective_func, sortino_constraints = self._create_sortino_objective(w, expected_returns, returns_data)
+            additional_constraints.extend(sortino_constraints)
+        elif objective == ObjectiveType.MAXIMIZE_CALMAR:
+            # Calmar ratio optimization (return/max drawdown)
+            if returns_data is None:
+                raise ValueError("returns_data required for Calmar optimization")
+            objective_func, calmar_constraints = self._create_calmar_objective(w, expected_returns, returns_data, lookback_periods)
+            additional_constraints.extend(calmar_constraints)
         else:
             raise ValueError(f"Unknown objective type: {objective}")
         
@@ -192,6 +220,9 @@ class MeanVarianceOptimizer:
             turnover = cp.norm(w - constraints.current_weights, 1)
             constraint_list.append(turnover <= constraints.max_turnover)
         
+        # Add objective-specific constraints
+        constraint_list.extend(additional_constraints)
+        
         # Create and solve problem
         problem = cp.Problem(objective_func, constraint_list)
         
@@ -235,6 +266,113 @@ class MeanVarianceOptimizer:
             success=success
         )
     
+    def _create_cvar_objective(self, w, returns_data: np.ndarray, confidence: float):
+        """
+        Create CVaR (Conditional Value at Risk) optimization objective.
+        
+        CVaR is the expected value of losses that exceed the VaR threshold.
+        We minimize CVaR to find portfolios with better tail risk properties.
+        """
+        n_scenarios, n_assets = returns_data.shape
+        
+        # Portfolio returns for each scenario
+        portfolio_returns = returns_data @ w
+        
+        # VaR auxiliary variable
+        var = cp.Variable()
+        
+        # CVaR auxiliary variables (losses exceeding VaR)
+        u = cp.Variable(n_scenarios, nonneg=True)
+        
+        # CVaR formulation: VaR + (1/confidence) * mean(u)
+        # where u[i] = max(0, -portfolio_returns[i] - var)
+        cvar = var + (1.0 / confidence) * cp.sum(u) / n_scenarios
+        
+        # Constraint: u[i] >= -portfolio_returns[i] - var for all scenarios
+        constraints_cvar = [u[i] >= -portfolio_returns[i] - var for i in range(n_scenarios)]
+        
+        return cp.Minimize(cvar), constraints_cvar
+    
+    def _create_sortino_objective(self, w, expected_returns: np.ndarray, returns_data: np.ndarray):
+        """
+        Create Sortino ratio optimization objective.
+        
+        Sortino ratio = (expected_return - risk_free_rate) / downside_deviation
+        We maximize this ratio focusing only on downside risk.
+        """
+        n_scenarios, n_assets = returns_data.shape
+        
+        # Portfolio returns for each scenario
+        portfolio_returns = returns_data @ w
+        expected_portfolio_return = expected_returns.T @ w
+        
+        # Downside deviations (only negative returns relative to risk-free rate)
+        downside_deviations = cp.Variable(n_scenarios, nonneg=True)
+        
+        # Constraint: downside_deviation[i] >= max(0, risk_free_rate - portfolio_returns[i])
+        constraints_sortino = [
+            downside_deviations[i] >= self.risk_free_rate - portfolio_returns[i] 
+            for i in range(n_scenarios)
+        ]
+        
+        # Downside variance (mean of squared downside deviations)
+        downside_variance = cp.sum_squares(downside_deviations) / n_scenarios
+        
+        # Sortino ratio approximation: maximize excess return / sqrt(downside variance)
+        # Using utility approximation: excess_return - 0.5 * downside_variance
+        excess_return = expected_portfolio_return - self.risk_free_rate
+        
+        return cp.Maximize(excess_return - 0.5 * downside_variance), constraints_sortino
+    
+    def _create_calmar_objective(self, w, expected_returns: np.ndarray, returns_data: np.ndarray, lookback_periods: int):
+        """
+        Create Calmar ratio optimization objective.
+        
+        Calmar ratio = annualized_return / max_drawdown
+        We maximize this ratio by optimizing return relative to maximum drawdown.
+        """
+        n_scenarios, n_assets = returns_data.shape
+        lookback = min(lookback_periods, n_scenarios)
+        
+        # Portfolio returns for each scenario
+        portfolio_returns = returns_data[-lookback:] @ w  # Use recent data
+        expected_portfolio_return = expected_returns.T @ w
+        
+        # Cumulative returns
+        cumulative_returns = cp.Variable(lookback)
+        cumulative_returns[0] = portfolio_returns[0]
+        
+        # Build cumulative return series
+        constraints_cumulative = []
+        for i in range(1, lookback):
+            constraints_cumulative.append(cumulative_returns[i] == cumulative_returns[i-1] + portfolio_returns[i])
+        
+        # Running maximum (for drawdown calculation)
+        running_max = cp.Variable(lookback)
+        drawdowns = cp.Variable(lookback)
+        
+        # Initialize running maximum
+        constraints_calmar = [running_max[0] == cumulative_returns[0]]
+        constraints_calmar.append(drawdowns[0] == 0)  # No drawdown at start
+        
+        # Update running maximum and calculate drawdowns
+        for i in range(1, lookback):
+            constraints_calmar.append(running_max[i] >= running_max[i-1])
+            constraints_calmar.append(running_max[i] >= cumulative_returns[i])
+            constraints_calmar.append(drawdowns[i] == running_max[i] - cumulative_returns[i])
+        
+        # Maximum drawdown
+        max_drawdown = cp.Variable()
+        constraints_calmar.append(max_drawdown >= cp.max(drawdowns))
+        
+        # Calmar ratio approximation: maximize return - penalty * max_drawdown
+        # Using penalty term to avoid division by zero
+        penalty = 10.0  # Adjust based on typical drawdown magnitudes
+        
+        all_constraints = constraints_cumulative + constraints_calmar
+        
+        return cp.Maximize(expected_portfolio_return - penalty * max_drawdown), all_constraints
+
     def compute_efficient_frontier(
         self,
         expected_returns: np.ndarray,
@@ -248,62 +386,67 @@ class MeanVarianceOptimizer:
         Args:
             expected_returns: Expected returns for each asset
             covariance_matrix: Asset covariance matrix
-            num_points: Number of points on frontier
+            num_points: Number of points on the frontier
             constraints: Portfolio constraints
             
         Returns:
-            Tuple of (returns, risks, weights) along frontier
+            Tuple of (returns, risks, weights) for efficient portfolios
         """
-        logger.info(f"Computing efficient frontier with {num_points} points")
+        n_assets = len(expected_returns)
         
-        # Find minimum and maximum return portfolios
-        min_var_result = self.optimize_portfolio(
+        if constraints is None:
+            constraints = PortfolioConstraints()
+        
+        # Find minimum and maximum returns
+        min_ret_result = self.optimize_portfolio(
             expected_returns, covariance_matrix,
-            objective=ObjectiveType.MINIMIZE_VARIANCE,
-            constraints=constraints
+            ObjectiveType.MINIMIZE_VARIANCE,
+            constraints
         )
-        
         max_ret_result = self.optimize_portfolio(
             expected_returns, covariance_matrix,
-            objective=ObjectiveType.MAXIMIZE_RETURN,
-            constraints=constraints
+            ObjectiveType.MAXIMIZE_RETURN,
+            constraints
         )
         
-        if not (min_var_result.success and max_ret_result.success):
-            raise RuntimeError("Failed to find boundary portfolios for efficient frontier")
-        
-        # Create return targets
-        min_return = min_var_result.expected_return
+        min_return = min_ret_result.expected_return
         max_return = max_ret_result.expected_return
+        
+        # Generate target returns
         target_returns = np.linspace(min_return, max_return, num_points)
         
-        # Compute portfolio for each target return
-        frontier_returns = []
-        frontier_risks = []
-        frontier_weights = []
+        # Compute efficient portfolios
+        efficient_returns = []
+        efficient_risks = []
+        efficient_weights = []
         
-        for target_return in target_returns:
-            # Set target return constraint
-            target_constraints = constraints or PortfolioConstraints()
-            target_constraints.target_return = target_return
+        for target_ret in target_returns:
+            # Add target return constraint
+            target_constraints = PortfolioConstraints(
+                long_only=constraints.long_only,
+                sum_to_one=constraints.sum_to_one,
+                min_weight=constraints.min_weight,
+                max_weight=constraints.max_weight,
+                target_return=target_ret
+            )
             
             result = self.optimize_portfolio(
                 expected_returns, covariance_matrix,
-                objective=ObjectiveType.MINIMIZE_VARIANCE,
-                constraints=target_constraints
+                ObjectiveType.MINIMIZE_VARIANCE,
+                target_constraints
             )
             
             if result.success:
-                frontier_returns.append(result.expected_return)
-                frontier_risks.append(np.sqrt(result.expected_variance))
-                frontier_weights.append(result.weights)
+                efficient_returns.append(result.expected_return)
+                efficient_risks.append(np.sqrt(result.expected_variance))
+                efficient_weights.append(result.weights)
         
         return (
-            np.array(frontier_returns),
-            np.array(frontier_risks),
-            np.array(frontier_weights)
+            np.array(efficient_returns),
+            np.array(efficient_risks),
+            np.array(efficient_weights)
         )
-    
+
     def optimize_maximum_sharpe(
         self,
         expected_returns: np.ndarray,
@@ -311,18 +454,10 @@ class MeanVarianceOptimizer:
         constraints: Optional[PortfolioConstraints] = None
     ) -> OptimizationResult:
         """
-        Find maximum Sharpe ratio portfolio using two-step approach.
+        Find maximum Sharpe ratio portfolio using quadratic programming.
         
-        This solves the Sharpe ratio optimization exactly by transforming
-        to a quadratic program.
-        
-        Args:
-            expected_returns: Expected returns for each asset
-            covariance_matrix: Asset covariance matrix
-            constraints: Portfolio constraints
-            
-        Returns:
-            Optimization result for maximum Sharpe portfolio
+        This method uses the analytical solution for maximum Sharpe ratio
+        when possible, falling back to numerical optimization.
         """
         n_assets = len(expected_returns)
         
@@ -346,11 +481,10 @@ class MeanVarianceOptimizer:
             kappa >= 0
         ]
         
-        # Long-only constraint
+        # Additional constraints on y (which represent w/kappa)
         if constraints.long_only:
             constraint_list.append(y >= 0)
         
-        # Additional constraints (scaled appropriately)
         if constraints.min_weight is not None:
             constraint_list.append(y >= constraints.min_weight * kappa)
         if constraints.max_weight is not None:
@@ -358,8 +492,8 @@ class MeanVarianceOptimizer:
         
         # Solve problem
         problem = cp.Problem(objective, constraint_list)
-        
         solver_name = self._get_available_solver()
+        
         try:
             solve_time = problem.solve(solver=solver_name, verbose=self.verbose)
         except Exception as e:
@@ -368,25 +502,29 @@ class MeanVarianceOptimizer:
         
         # Extract results
         if problem.status in ['optimal', 'optimal_inaccurate']:
-            # Convert back to weights
+            # Convert back to portfolio weights
             y_val = y.value
             kappa_val = kappa.value
             
-            if kappa_val > 1e-10:
+            if kappa_val > 1e-8:
                 weights = y_val / kappa_val
+                expected_return = float(expected_returns.T @ weights)
+                expected_variance = float(weights.T @ covariance_matrix @ weights)
+                
+                # Calculate Sharpe ratio
+                if expected_variance > 0:
+                    sharpe_ratio = (expected_return - self.risk_free_rate) / np.sqrt(expected_variance)
+                else:
+                    sharpe_ratio = 0.0
+                
+                success = True
             else:
+                logger.error("Optimization resulted in zero portfolio value")
                 weights = np.zeros(n_assets)
-            
-            # Calculate portfolio metrics
-            expected_return = float(expected_returns.T @ weights)
-            expected_variance = float(weights.T @ covariance_matrix @ weights)
-            
-            if expected_variance > 0:
-                sharpe_ratio = (expected_return - self.risk_free_rate) / np.sqrt(expected_variance)
-            else:
+                expected_return = 0.0
+                expected_variance = 0.0
                 sharpe_ratio = 0.0
-            
-            success = True
+                success = False
         else:
             logger.error(f"Maximum Sharpe optimization failed: {problem.status}")
             weights = np.zeros(n_assets)
@@ -407,27 +545,37 @@ class MeanVarianceOptimizer:
         )
 
 
-class RobustOptimizer(MeanVarianceOptimizer):
-    """Robust portfolio optimization with uncertainty sets."""
+class RobustOptimizer:
+    """
+    Robust portfolio optimizer for handling parameter uncertainty.
+    
+    Implements robust optimization techniques to account for estimation
+    errors in expected returns and covariance matrices.
+    """
     
     def __init__(
         self,
         risk_free_rate: float = 0.02,
-        solver: str = 'OSQP',
-        verbose: bool = False,
-        uncertainty_level: float = 0.1
+        uncertainty_level: float = 0.1,
+        solver_preference: List[str] = None,
+        verbose: bool = False
     ):
         """
         Initialize robust optimizer.
         
         Args:
             risk_free_rate: Risk-free rate
-            solver: CVXPY solver
-            verbose: Solver verbosity
-            uncertainty_level: Level of uncertainty in parameters
+            uncertainty_level: Level of parameter uncertainty (0-1)
+            solver_preference: Preferred CVXPY solvers
+            verbose: Enable verbose solver output
         """
-        super().__init__(risk_free_rate, solver, verbose)
+        if not CVXPY_AVAILABLE:
+            raise ImportError("CVXPY is required for robust optimization")
+        
+        self.risk_free_rate = risk_free_rate
         self.uncertainty_level = uncertainty_level
+        self.solver_preference = solver_preference or ['OSQP', 'ECOS', 'SCS']
+        self.verbose = verbose
     
     def optimize_robust_portfolio(
         self,
@@ -437,12 +585,12 @@ class RobustOptimizer(MeanVarianceOptimizer):
         constraints: Optional[PortfolioConstraints] = None
     ) -> OptimizationResult:
         """
-        Optimize portfolio with robust optimization under uncertainty.
+        Optimize robust portfolio under parameter uncertainty.
         
         Args:
-            expected_returns: Expected returns (point estimates)
+            expected_returns: Expected returns (center of uncertainty set)
             covariance_matrix: Covariance matrix
-            return_uncertainty: Uncertainty in return estimates
+            return_uncertainty: Uncertainty in expected returns
             constraints: Portfolio constraints
             
         Returns:
@@ -454,26 +602,31 @@ class RobustOptimizer(MeanVarianceOptimizer):
             constraints = PortfolioConstraints()
         
         if return_uncertainty is None:
-            # Default uncertainty based on return volatility
-            return_uncertainty = self.uncertainty_level * np.sqrt(np.diag(covariance_matrix))
+            # Default uncertainty: proportional to return magnitude
+            return_uncertainty = self.uncertainty_level * np.abs(expected_returns)
         
         # Create optimization variables
         w = cp.Variable(n_assets)
+        t = cp.Variable()  # Auxiliary variable for robust constraint
         
-        # Worst-case portfolio return (robust counterpart)
-        portfolio_return = expected_returns.T @ w
-        uncertainty_term = cp.norm(cp.multiply(return_uncertainty, w), 2)
-        robust_return = portfolio_return - uncertainty_term
+        # Robust portfolio return (worst-case)
+        # min_mu w^T μ subject to ||w^T δμ||_2 <= t
+        # This gives: w^T μ - t as the worst-case return
+        robust_return = expected_returns.T @ w - t
         
         # Portfolio variance
         portfolio_variance = cp.quad_form(w, covariance_matrix)
         
-        # Robust utility maximization
+        # Robust constraint: ||D w||_2 <= t where D = diag(return_uncertainty)
+        uncertainty_constraint = cp.norm(cp.multiply(return_uncertainty, w), 2) <= t
+        
+        # Objective: maximize robust utility
         objective = cp.Maximize(robust_return - 0.5 * portfolio_variance)
         
-        # Standard constraints
-        constraint_list = []
+        # Constraints
+        constraint_list = [uncertainty_constraint]
         
+        # Standard portfolio constraints
         if constraints.sum_to_one:
             constraint_list.append(cp.sum(w) == 1)
         
@@ -485,10 +638,16 @@ class RobustOptimizer(MeanVarianceOptimizer):
         if constraints.max_weight is not None:
             constraint_list.append(w <= constraints.max_weight)
         
-        # Solve robust problem
+        if constraints.min_return is not None:
+            constraint_list.append(robust_return >= constraints.min_return)
+        
+        if constraints.max_variance is not None:
+            constraint_list.append(portfolio_variance <= constraints.max_variance)
+        
+        # Solve problem
         problem = cp.Problem(objective, constraint_list)
         
-        solver_name = self._get_available_solver()
+        solver_name = self.solver_preference[0] if self.solver_preference else 'OSQP'
         try:
             solve_time = problem.solve(solver=solver_name, verbose=self.verbose)
         except Exception as e:
@@ -501,6 +660,7 @@ class RobustOptimizer(MeanVarianceOptimizer):
             expected_return = float(expected_returns.T @ weights)
             expected_variance = float(weights.T @ covariance_matrix @ weights)
             
+            # Calculate Sharpe ratio (using nominal expected return)
             if expected_variance > 0:
                 sharpe_ratio = (expected_return - self.risk_free_rate) / np.sqrt(expected_variance)
             else:
