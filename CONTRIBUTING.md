@@ -240,8 +240,8 @@ python -m benchmarks.run_all --profile
 ```
 
 ### Test Coverage Requirements
-- **Minimum Coverage**: 90% for new code
-- **Critical Functions**: 100% coverage for optimization algorithms
+- **Coverage Goal**: High coverage for new code
+- **Critical Functions**: Comprehensive coverage for optimization algorithms
 - **Edge Cases**: Test boundary conditions and error handling
 - **Performance**: Benchmark performance-critical functions
 
@@ -271,11 +271,11 @@ python -m benchmarks.run_all --output-format json
 python scripts/compare_benchmarks.py current.json baseline.json
 ```
 
-### Performance Targets
-- **Portfolio Optimization**: <100μs for 50 assets, <1ms for 500 assets
-- **Risk Model Updates**: <10ms for covariance matrix computation
-- **Backtesting**: >1000 portfolios/second for historical simulation
-- **Memory Usage**: <100MB per 1000-asset portfolio
+### Performance Guidelines
+- **Portfolio Optimization**: Efficient scaling with asset count
+- **Risk Model Updates**: Fast covariance matrix computation
+- **Backtesting**: High-throughput historical simulation
+- **Memory Usage**: Memory-efficient large portfolio handling
 
 ## 🔍 Code Review Process
 

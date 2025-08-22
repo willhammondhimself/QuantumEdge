@@ -104,6 +104,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
@@ -191,6 +193,12 @@ benchmarks/*.json
 
 # Node modules (for any frontend components)
 node_modules/
+
+# AI Development Tools
+.claude/
+.serena/
+*.claude
+*.serena
 
 # OS generated files
 Thumbs.db

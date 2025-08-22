@@ -1,65 +1,15 @@
 # QuantumEdge - Quantum-Inspired Portfolio Optimization
 
-[![Build Status](https://github.com/willhammondhimself/QuantumEdge/workflows/CI/badge.svg)](https://github.com/willhammondhimself/QuantumEdge/actions)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-comprehensive-green.svg)](#testing)
 
-A production-ready quantum-inspired portfolio optimization framework that I designed and built from the ground up, implementing advanced algorithms for financial portfolio management with crisis-proof robustness.
+A portfolio optimization framework implementing quantum-inspired algorithms alongside classical methods. Features a production-ready FastAPI backend with comprehensive testing and modular architecture.
 
-## What I Built vs. Collaborated On
+## Overview
 
-### 🚀 **Solo Development (100% my work):**
-- Complete quantum-inspired optimization algorithms (VQE, QAOA)
-- Full-stack FastAPI backend architecture with async WebSocket support
-- Classical portfolio optimization engine with multiple objective functions
-- Comprehensive Docker containerization and CI/CD pipeline
-- Production monitoring, error handling, and security implementations
-- All mathematical formulations and algorithm implementations
-- Interactive frontend dashboard with real-time portfolio visualization
-
-### 🤝 **External Libraries/Frameworks Used:**
-- [NumPy](https://numpy.org/), [SciPy](https://scipy.org/), [CVXPY](https://www.cvxpy.org/) for optimization
-- [FastAPI](https://fastapi.tiangolo.com/) for backend API framework
-- [React](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/) for frontend
-- [Docker](https://www.docker.com/) for containerization
-- [Pytest](https://pytest.org/) for testing framework
-
-## 📊 High-Level Quantified Results
-
-- **Performance**: 40% improvement in risk-adjusted returns vs. traditional mean-variance optimization
-- **Speed**: Sub-100ms API response times for portfolio optimization requests
-- **Robustness**: 15% lower maximum drawdown during simulated market stress tests
-- **Scalability**: Successfully handles portfolios up to 500+ assets with <2s optimization time
-- **Coverage**: 85%+ test coverage across all modules with 150+ unit tests
-- **Uptime**: 99.9% API availability with comprehensive error handling
-
-## 🛠 Technology Stack
-
-### Core Optimization & Algorithms
-- **[NumPy](https://numpy.org/)** - Numerical computing and matrix operations
-- **[SciPy](https://scipy.org/)** - Advanced optimization routines and statistical functions
-- **[CVXPY](https://www.cvxpy.org/)** - Convex optimization for portfolio constraints
-- **[JAX](https://jax.readthedocs.io/)** (optional) - High-performance automatic differentiation
-
-### Backend Infrastructure
-- **[FastAPI](https://fastapi.tiangolo.com/)** - Modern async web framework with automatic API docs
-- **[Pydantic](https://pydantic.dev/)** - Data validation and serialization
-- **[WebSockets](https://websockets.readthedocs.io/)** - Real-time portfolio updates
-- **[Uvicorn](https://www.uvicorn.org/)** - ASGI server for production deployment
-
-### Frontend & Visualization
-- **[React](https://reactjs.org/)** - Component-based UI library
-- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe JavaScript development
-- **[Chart.js](https://www.chartjs.org/)** - Interactive portfolio performance charts
-- **[Material-UI](https://mui.com/)** - Professional component library
-
-### Development & Deployment
-- **[Docker](https://www.docker.com/)** - Containerization for consistent environments
-- **[GitHub Actions](https://github.com/features/actions)** - CI/CD automation
-- **[Pytest](https://pytest.org/)** - Comprehensive testing framework
-- **[Black](https://black.readthedocs.io/)** - Code formatting
-- **[MyPy](http://mypy-lang.org/)** - Static type checking
+QuantumEdge explores quantum computing applications in financial portfolio optimization by implementing VQE (Variational Quantum Eigensolver) and QAOA (Quantum Approximate Optimization Algorithm) through classical simulation. The framework includes classical mean-variance optimization for comparison and evaluation.
 
 ## Features
 
@@ -72,22 +22,13 @@ A production-ready quantum-inspired portfolio optimization framework that I desi
 ### API & Infrastructure
 - **FastAPI Backend** - Async endpoints with WebSocket support for real-time portfolio updates
 - **Production Ready** - Docker containerization, monitoring, and comprehensive error handling
-- **CI/CD Pipeline** - Automated testing, code quality checks, and security scanning
+- **Automated Testing** - Comprehensive test suite with unit, integration, and performance tests
 - **Documentation** - Type hints, docstrings, and comprehensive test coverage
-
-## 🌍 Real-World Applications
-
-• **Institutional Asset Management** - Optimizing multi-billion dollar pension fund portfolios with risk parity constraints
-• **Hedge Fund Strategies** - Dynamic rebalancing for long/short equity funds with sector neutrality
-• **Robo-Advisory Platforms** - Automated portfolio construction for retail investors with ESG preferences
-• **Risk Management** - Stress testing and scenario analysis for regulatory compliance (Basel III/IV)
-• **Alternative Investments** - Portfolio allocation across traditional assets, crypto, and real estate
-• **Crisis Management** - Robust optimization during market volatility with downside protection
 
 ## Installation
 
 ```bash
-git clone https://github.com/willhammondhimself/QuantumEdge.git
+git clone https://github.com/willhammond/QuantumEdge.git
 cd QuantumEdge
 
 # Create virtual environment
@@ -96,6 +37,10 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Configure environment (optional)
+cp .env.example .env
+# Edit .env with your API keys
 
 # Run tests
 pytest tests/
@@ -126,13 +71,21 @@ qaoa = QAOA(num_assets=10, cardinality=5)
 selection = qaoa.optimize(expected_returns, risk_matrix)
 ```
 
+## Technology Stack
+
+- **Optimization**: NumPy, SciPy, CVXPY, JAX (optional)
+- **Backend**: FastAPI, Pydantic, AsyncIO
+- **Testing**: Pytest, GitHub Actions
+- **Infrastructure**: Docker, Docker Compose
+- **Development**: Black, Flake8, MyPy, Pre-commit hooks
+
 ## API Endpoints
 
-• **POST /optimize/classical** - Classical mean-variance optimization
-• **POST /optimize/vqe** - VQE-based eigenportfolio optimization
-• **POST /optimize/qaoa** - QAOA combinatorial selection
-• **WS /portfolio/stream** - Real-time portfolio updates
-• **GET /health** - Health check and system status
+- `POST /optimize/classical` - Classical mean-variance optimization
+- `POST /optimize/vqe` - VQE-based eigenportfolio optimization  
+- `POST /optimize/qaoa` - QAOA combinatorial selection
+- `WS /portfolio/stream` - Real-time portfolio updates
+- `GET /health` - Health check and system status
 
 ## Development
 
@@ -152,29 +105,26 @@ make benchmark
 
 ## Testing
 
-• **Unit Tests** - Algorithm implementations and core functionality
-• **Integration Tests** - API endpoints and database interactions
-• **Performance Tests** - Benchmarking and regression detection
-• **Coverage** - Maintained at 85%+ with comprehensive test scenarios
+- **Unit Tests** - Algorithm implementations and core functionality
+- **Integration Tests** - API endpoints and database interactions
+- **Performance Tests** - Benchmarking and regression detection
+- **Test Coverage** - Comprehensive test scenarios covering core functionality and edge cases
 
 ## Contributing
 
 Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Code standards and style requirements
+- Testing expectations and coverage
+- Pull request process and review criteria
+- Development workflow and best practices
 
-• Code standards and style requirements
-• Testing expectations and coverage
-• Pull request process and review criteria
-• Development workflow and best practices
+## Security
 
-## 💼 Professional Opportunities
-
-**I'm actively seeking opportunities in quantitative finance and welcome:**
-- **Contributors** to expand this open-source project
-- **Technical interviews** for quantitative developer/researcher roles
-- **Internship opportunities** at leading quantitative funds including **Citadel**, Renaissance Technologies, Two Sigma, and other top-tier firms
-- **Collaboration** on advanced portfolio optimization research
-
-Feel free to reach out if you're interested in discussing this project or potential opportunities!
+Security is important to us. Please see [SECURITY.md](SECURITY.md) for:
+- Vulnerability reporting procedures
+- Security best practices
+- Supported versions and updates
+- Data handling guidelines
 
 ## License
 

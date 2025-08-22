@@ -5,13 +5,13 @@ This directory contains visual assets that showcase QuantumEdge's capabilities a
 ## 📊 Performance Charts
 
 ### Crisis Performance Comparison
-`crisis-performance.png` - Comparative portfolio performance during historical crisis periods, demonstrating QuantumEdge's superior resilience.
+`crisis-performance.png` - Comparative portfolio performance during historical crisis periods, showcasing different optimization approaches.
 
 ### Risk-Return Profile  
 `risk-return-profile.png` - Scatter plot showing risk-adjusted returns across different market conditions and portfolio sizes.
 
 ### Optimization Speed Benchmarks
-`optimization-benchmarks.png` - Performance comparison showing optimization time vs portfolio size, highlighting sub-millisecond performance.
+`optimization-benchmarks.png` - Performance comparison showing optimization time vs portfolio size across different algorithms.
 
 ## 🎥 Demo Assets
 
@@ -59,7 +59,7 @@ This directory contains visual assets that showcase QuantumEdge's capabilities a
 
 ## 📝 Asset Creation Notes
 
-**Chart Generation**: Performance charts generated from actual benchmark data using matplotlib and seaborn with professional styling.
+**Chart Generation**: Performance charts generated from benchmark data using matplotlib and seaborn with professional styling.
 
 **Architecture Diagrams**: Created using draw.io/Lucidchart with consistent styling and color scheme.
 
