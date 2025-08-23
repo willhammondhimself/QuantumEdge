@@ -1,5 +1,5 @@
 # Multi-stage build for QuantumEdge
-FROM python:3.10-slim-bullseye as builder
+FROM python:3.11-slim-bullseye as builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -30,7 +30,7 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Production stage
-FROM python:3.10-slim-bullseye
+FROM python:3.11-slim-bullseye
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \

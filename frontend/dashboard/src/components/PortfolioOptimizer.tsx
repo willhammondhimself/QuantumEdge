@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import useWebSocket from '@/hooks/useWebSocket';
 import { 
   TrendingUp, 
   Zap, 
@@ -10,7 +11,9 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  PieChart
+  PieChart,
+  Eye,
+  Activity
 } from 'lucide-react';
 
 import { 
@@ -64,6 +67,9 @@ export default function PortfolioOptimizer() {
   const [cvarConfidence, setCvarConfidence] = useState(0.05);
   const [lookbackPeriods, setLookbackPeriods] = useState(252);
   const [result, setResult] = useState<any>(null);
+  
+  // WebSocket for real-time monitoring
+  const { isConnected, addPortfolio } = useWebSocket();
 
   // Mutations for different optimization types
   const meanVarianceMutation = useMutation({
@@ -134,6 +140,19 @@ export default function PortfolioOptimizer() {
 
   const isLoading = meanVarianceMutation.isPending || vqeMutation.isPending || qaoaMutation.isPending;
   const error = meanVarianceMutation.error || vqeMutation.error || qaoaMutation.error;
+
+  const handleStartMonitoring = () => {
+    if (!result?.portfolio?.weights) return;
+    
+    const symbols = SAMPLE_SYMBOLS.slice(0, numAssets);
+    const weights = result.portfolio.weights;
+    const portfolioId = `optimized-${Date.now()}`;
+    
+    addPortfolio(portfolioId, symbols, weights, 25000);
+    
+    // Show success message
+    alert(`Started monitoring optimized portfolio with ID: ${portfolioId}\nCheck the Monitor tab to see real-time updates.`);
+  };
 
   return (
     <div className="space-y-6">
@@ -323,9 +342,21 @@ export default function PortfolioOptimizer() {
       {/* Results */}
       {result && (
         <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Optimization Results</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Optimization Results</h2>
+            </div>
+            
+            {isConnected && result.portfolio?.weights && (
+              <button
+                onClick={handleStartMonitoring}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Activity className="w-4 h-4" />
+                <span>Monitor Portfolio</span>
+              </button>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -108,8 +108,70 @@ export const compareStrategies = async (request: CompareStrategiesRequest): Prom
   return response.data;
 };
 
-// Sample data for demo purposes
-export const SAMPLE_SYMBOLS = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX'];
+// Comprehensive asset universe for portfolio optimization
+export const STOCK_SYMBOLS = [
+  // Technology
+  'AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'NVDA', 'META', 'NFLX', 'CRM', 'ORCL', 'ADBE', 'INTC', 'AMD', 'ASML',
+  // Finance
+  'JPM', 'BAC', 'WFC', 'GS', 'MS', 'V', 'MA', 'PYPL', 'SQ',
+  // Healthcare
+  'JNJ', 'PFE', 'UNH', 'MRNA', 'ABBV', 'TMO', 'DHR', 'BMY',
+  // Consumer
+  'WMT', 'TGT', 'COST', 'HD', 'NKE', 'SBUX', 'DIS', 'MCD',
+  // Energy
+  'XOM', 'CVX', 'COP', 'EOG', 'SLB'
+];
+
+export const ETF_SYMBOLS = [
+  // Broad Market
+  'SPY', 'QQQ', 'IWM', 'VTI', 'VOO', 'VEA', 'VWO',
+  // Sector ETFs
+  'XLK', 'XLF', 'XLV', 'XLE', 'XLI', 'XLP', 'XLY', 'XLU',
+  // Special ETFs (User requested)
+  'BITX', 'UPRO', 'ARKK', 'ARKQ', 'ARKW'
+];
+
+export const CRYPTO_SYMBOLS = [
+  // Major Cryptocurrencies (User requested + others)
+  'BTC-USD', 'ETH-USD', 'XRP-USD', 'DOGE-USD', 'PENGU-USD',
+  // Additional Major Cryptos
+  'ADA-USD', 'SOL-USD', 'MATIC-USD', 'DOT-USD', 'AVAX-USD'
+];
+
+// Asset categories for UI organization
+export const ASSET_CATEGORIES = {
+  stocks: {
+    name: 'Stocks',
+    description: 'Individual company stocks',
+    symbols: STOCK_SYMBOLS,
+    icon: '📈',
+    riskLevel: 'Medium-High'
+  },
+  etfs: {
+    name: 'ETFs',
+    description: 'Exchange-traded funds',
+    symbols: ETF_SYMBOLS,
+    icon: '📊',
+    riskLevel: 'Low-Medium'
+  },
+  crypto: {
+    name: 'Cryptocurrency',
+    description: 'Digital assets (High volatility)',
+    symbols: CRYPTO_SYMBOLS,
+    icon: '₿',
+    riskLevel: 'Very High'
+  }
+};
+
+// Combined symbols for backwards compatibility
+export const SAMPLE_SYMBOLS = [
+  ...STOCK_SYMBOLS.slice(0, 8), // Top 8 stocks
+  ...ETF_SYMBOLS.slice(0, 4),   // Top 4 ETFs
+  ...CRYPTO_SYMBOLS.slice(0, 3)  // Top 3 cryptos
+];
+
+// All available symbols
+export const ALL_SYMBOLS = [...STOCK_SYMBOLS, ...ETF_SYMBOLS, ...CRYPTO_SYMBOLS];
 
 export const generateSampleReturns = (numAssets: number): number[] => {
   return Array.from({ length: numAssets }, () => Math.random() * 0.2 - 0.05); // -5% to 15% returns

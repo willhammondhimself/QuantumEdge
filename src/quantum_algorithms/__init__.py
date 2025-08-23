@@ -13,17 +13,30 @@ from .quantum_gates import QuantumGates, create_controlled_gate
 from .quantum_circuit import QuantumCircuit, Operation
 from .vqe import QuantumVQE, ParameterizedCircuit, VQEResult, JAX_AVAILABLE
 from .qaoa import PortfolioQAOA, QAOACircuit, QAOAResult
+from .noise_models import NoiseModel, DepolarizingChannel, NoiseType, NoiseParameters
+from .quantum_volume import (
+    QuantumVolumeProtocol,
+    QuantumVolumeResult,
+    QVCircuitSpecification,
+)
 
 __all__: List[str] = [
     "QuantumGates",
-    "create_controlled_gate", 
+    "create_controlled_gate",
     "QuantumCircuit",
     "Operation",
     "QuantumVQE",
-    "ParameterizedCircuit", 
+    "ParameterizedCircuit",
     "VQEResult",
     "JAX_AVAILABLE",
     "PortfolioQAOA",
     "QAOACircuit",
-    "QAOAResult"
+    "QAOAResult",
+    "NoiseModel",
+    "DepolarizingChannel",
+    "NoiseType",
+    "NoiseParameters",
+    "QuantumVolumeProtocol",
+    "QuantumVolumeResult",
+    "QVCircuitSpecification",
 ]

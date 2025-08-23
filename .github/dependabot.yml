@@ -1,0 +1,87 @@
+version: 2
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "willhammondhimself"
+    assignees:
+      - "willhammondhimself"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      quantum-dependencies:
+        patterns:
+          - "qiskit*"
+          - "pennylane*"
+          - "jax*"
+      ml-dependencies:
+        patterns:
+          - "torch*"
+          - "tensorflow*"
+          - "scikit-learn"
+      testing-dependencies:
+        patterns:
+          - "pytest*"
+          - "coverage"
+          - "mypy"
+
+  # JavaScript dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "04:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "willhammondhimself"
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "04:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "willhammondhimself"
+    labels:
+      - "dependencies"
+      - "ci/cd"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "04:00"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "willhammondhimself"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "build"
+      include: "scope"

@@ -1,0 +1,61 @@
+# Add labels to PRs based on file changes
+
+quantum:
+  - src/quantum_algorithms/**/*
+  - tests/unit/test_quantum_*.py
+
+optimization:
+  - src/optimization/**/*
+  - tests/unit/test_mean_variance.py
+  - tests/unit/test_classical_solvers.py
+
+api:
+  - src/api/**/*
+  - tests/integration/test_api_*.py
+
+frontend:
+  - frontend/**/*
+  - "*.jsx"
+  - "*.tsx"
+  - "*.css"
+  - "*.scss"
+
+backend:
+  - src/**/*
+  - "!src/api/**/*"
+
+tests:
+  - tests/**/*
+  - "**/*.test.py"
+  - "**/*_test.py"
+
+documentation:
+  - "**/*.md"
+  - docs/**/*
+  - examples/**/*
+
+docker:
+  - Dockerfile*
+  - docker-compose*.yml
+  - .dockerignore
+
+dependencies:
+  - requirements*.txt
+  - pyproject.toml
+  - package.json
+  - package-lock.json
+
+ci/cd:
+  - .github/**/*
+  - .gitlab-ci.yml
+  - .travis.yml
+
+security:
+  - "**/security/**/*"
+  - "**/auth/**/*"
+  - "**/*security*.py"
+
+performance:
+  - "**/benchmarks/**/*"
+  - "**/*performance*.py"
+  - "**/*bench*.py"

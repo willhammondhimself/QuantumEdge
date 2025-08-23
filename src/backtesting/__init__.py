@@ -12,28 +12,37 @@ This module provides comprehensive backtesting capabilities including:
 from typing import List
 
 from .engine import BacktestEngine, BacktestConfig, BacktestResult
-from .strategy import PortfolioStrategy, BuyAndHoldStrategy, RebalancingStrategy
+from .strategy import (
+    PortfolioStrategy,
+    BuyAndHoldStrategy,
+    RebalancingStrategy,
+    MeanVarianceStrategy,
+    VQEStrategy,
+    QAOAStrategy,
+    CustomStrategy,
+)
 from .metrics import PerformanceMetrics, RiskMetrics, calculate_all_metrics
 from .portfolio import Portfolio, Transaction, PortfolioState
 
 __all__: List[str] = [
     # Core engine
     "BacktestEngine",
-    "BacktestConfig", 
+    "BacktestConfig",
     "BacktestResult",
-    
     # Strategies
     "PortfolioStrategy",
     "BuyAndHoldStrategy",
     "RebalancingStrategy",
-    
+    "MeanVarianceStrategy",
+    "VQEStrategy",
+    "QAOAStrategy",
+    "CustomStrategy",
     # Performance analysis
     "PerformanceMetrics",
-    "RiskMetrics", 
+    "RiskMetrics",
     "calculate_all_metrics",
-    
     # Portfolio management
     "Portfolio",
     "Transaction",
-    "PortfolioState"
+    "PortfolioState",
 ]

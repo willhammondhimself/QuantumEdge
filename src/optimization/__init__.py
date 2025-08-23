@@ -11,15 +11,19 @@ This module contains:
 from typing import List
 
 from .mean_variance import (
-    MeanVarianceOptimizer, RobustOptimizer, OptimizationResult,
-    PortfolioConstraints, ObjectiveType, CVXPY_AVAILABLE
+    MeanVarianceOptimizer,
+    RobustOptimizer,
+    OptimizationResult,
+    PortfolioConstraints,
+    ObjectiveType,
+    CVXPY_AVAILABLE,
 )
 
 __all__: List[str] = [
     "MeanVarianceOptimizer",
-    "RobustOptimizer", 
+    "RobustOptimizer",
     "OptimizationResult",
     "PortfolioConstraints",
     "ObjectiveType",
-    "CVXPY_AVAILABLE"
+    "CVXPY_AVAILABLE",
 ]

@@ -19,10 +19,13 @@ import PortfolioOptimizer from './PortfolioOptimizer';
 import PriceCharts from './PriceCharts';
 import BacktestDashboard from './BacktestDashboard';
 import HealthStatus from './HealthStatus';
+import RealTimeMonitor from './RealTimeMonitor';
+import Settings from './Settings';
 
 const navigation = [
   { name: 'Overview', id: 'overview', icon: BarChart3 },
   { name: 'Optimize', id: 'optimize', icon: TrendingUp },
+  { name: 'Monitor', id: 'monitor', icon: Activity },
   { name: 'Backtest', id: 'backtest', icon: Activity },
   { name: 'Charts', id: 'charts', icon: DollarSign },
   { name: 'Settings', id: 'settings', icon: Settings },
@@ -51,26 +54,23 @@ export default function Dashboard() {
         return <MarketOverview marketMetrics={marketMetrics} />;
       case 'optimize':
         return <PortfolioOptimizer />;
+      case 'monitor':
+        return <RealTimeMonitor />;
       case 'backtest':
         return <BacktestDashboard />;
       case 'charts':
         return <PriceCharts symbols={SAMPLE_SYMBOLS.slice(0, 4)} />;
       case 'settings':
-        return (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Settings</h2>
-            <p className="text-gray-600">Configuration options coming soon...</p>
-          </div>
-        );
+        return <Settings />;
       default:
         return <MarketOverview marketMetrics={marketMetrics} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
@@ -79,8 +79,8 @@ export default function Dashboard() {
                   <span className="text-white font-bold text-sm">Q</span>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">QuantumEdge</h1>
-                  <p className="text-xs text-gray-500">Portfolio Optimization</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">QuantumEdge</h1>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Portfolio Optimization</p>
                 </div>
               </div>
             </div>
@@ -91,14 +91,16 @@ export default function Dashboard() {
                 <div className="hidden md:flex items-center space-x-4 text-sm">
                   <div className="flex items-center">
                     <DollarSign className="w-4 h-4 text-green-500 mr-1" />
-                    <span className="text-gray-600">VIX:</span>
-                    <span className="font-medium ml-1">{marketMetrics.vix?.toFixed(2)}</span>
+                    <span className="text-gray-700 dark:text-gray-300">VIX:</span>
+                    <span className="font-medium ml-1 text-gray-900 dark:text-gray-100">{marketMetrics.vix?.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center">
                     <TrendingUp className="w-4 h-4 text-blue-500 mr-1" />
-                    <span className="text-gray-600">SPY:</span>
+                    <span className="text-gray-700 dark:text-gray-300">SPY:</span>
                     <span className={`font-medium ml-1 ${
-                      (marketMetrics.spy_return || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                      (marketMetrics.spy_return || 0) >= 0 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
                     }`}>
                       {((marketMetrics.spy_return || 0) * 100).toFixed(2)}%
                     </span>
@@ -114,7 +116,7 @@ export default function Dashboard() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Navigation */}
           <div className="lg:w-64 flex-shrink-0">
-            <nav className="bg-white rounded-lg shadow p-4">
+            <nav className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4">
               <ul className="space-y-2">
                 {navigation.map((item) => {
                   const Icon = item.icon;
@@ -124,8 +126,8 @@ export default function Dashboard() {
                         onClick={() => setActiveTab(item.id)}
                         className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                           activeTab === item.id
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         <Icon className="w-5 h-5 mr-3" />
