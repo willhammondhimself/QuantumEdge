@@ -52,7 +52,7 @@ httpx==0.26.0
 # Database & Time Series
 influxdb-client==1.38.0
 sqlalchemy==2.0.25
-asyncpg==0.29.0
+asyncpg==0.30.0
 
 # Monitoring & Logging
 prometheus-client==0.19.0
