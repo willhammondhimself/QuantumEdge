@@ -37,8 +37,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install black flake8 mypy bandit[toml] safety
+        # Install project dependencies for import checking
+        pip install -r requirements.txt
+        pip install -e .
     
     - name: Format check with Black
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
         black --check --diff src/ tests/ examples/
     
@@ -91,10 +96,15 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
         pip install pytest pytest-cov pytest-asyncio pytest-timeout
+        # Install the package in development mode
+        pip install -e .
     
     - name: Run tests with coverage
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
-        pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term-missing --timeout=300
+        export PYTHONPATH="${PYTHONPATH}:${PWD}"
+        python -m pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term-missing --timeout=300
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
